@@ -1,24 +1,40 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import Dashboard from './pages/Dashboard';
-import UsersPage from './pages/UsersPage';
-import EventsPage from './pages/EventsPage';
-import ApprovalsPage from './pages/ApprovalsPage';
-import EventApprovalDetailPage from './pages/EventApprovalDetailPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import EsahulatQueuePage from "./pages/EsahulatQueuePage";
+import EsahulatRequestDetailPage from "./pages/EsahulatRequestDetailPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginProtectedRoute from "./components/LoginProtectedRoute.jsx";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/approvals" element={<ApprovalsPage />} />
-        <Route path="/approvals/:id" element={<EventApprovalDetailPage />} />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route
+          path="/login"
+          element={
+            <LoginProtectedRoute>
+              <LoginPage />
+            </LoginProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <EsahulatQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/:id"
+          element={
+            <ProtectedRoute>
+              <EsahulatRequestDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/requests" />} />
       </Routes>
     </BrowserRouter>
   );

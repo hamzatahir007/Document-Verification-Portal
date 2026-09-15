@@ -4,7 +4,7 @@ import axios from "axios";
 
 const API = process.env.REACT_APP_ESAHULAT_API_URL;
 
-const ProtectedRoute = ({ children }) => {
+const LoginProtectedRoute = ({ children }) => {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -13,7 +13,6 @@ const ProtectedRoute = ({ children }) => {
       const token = localStorage.getItem("esahulat_token");
 
       if (!token) {
-        setAuthenticated(false);
         setChecking(false);
         return;
       }
@@ -32,7 +31,6 @@ const ProtectedRoute = ({ children }) => {
           res.data.success &&
           res.data.data?.officer
         ) {
-          // Keep the latest real profile
           localStorage.setItem(
             "esahulat_officer",
             JSON.stringify(res.data.data.officer)
@@ -40,11 +38,9 @@ const ProtectedRoute = ({ children }) => {
 
           setAuthenticated(true);
         } else {
-          throw new Error("Invalid officer profile.");
+          throw new Error("Invalid session");
         }
       } catch (error) {
-        console.error("Officer authentication failed:", error);
-
         localStorage.removeItem("esahulat_token");
         localStorage.removeItem("esahulat_officer");
 
@@ -75,10 +71,10 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return authenticated ? (
-    children
+    <Navigate to="/requests" replace />
   ) : (
-    <Navigate to="/login" replace />
+    children
   );
 };
 
-export default ProtectedRoute;
+export default LoginProtectedRoute;
