@@ -7,11 +7,16 @@ const API =
   process.env.REACT_APP_ESAHULAT_API_URL ||
   "http://localhost:5000/api/esahulat-officer";
 
+const PAGE_SIZE = 10;
+
 const EsahulatQueuePage = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const token = localStorage.getItem("esahulat_token");
   const officer = useMemo(() => {
     try {
@@ -26,11 +31,17 @@ const EsahulatQueuePage = () => {
     [token],
   );
 
-  const loadRequests = async () => {
+  const loadRequests = async (targetPage = page) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/esahulat-officer/requests`, { headers });
+      const res = await axios.get(`${API}/esahulat-officer/requests`, {
+        headers,
+        params: { page: targetPage, limit: PAGE_SIZE },
+      });
       setRequests(res.data.data.requests || []);
+      setTotal(res.data.data.total || 0);
+      setTotalPages(res.data.data.totalPages || 1);
+      setPage(targetPage);
     } catch (err) {
       setRequests([]);
     } finally {
@@ -39,8 +50,14 @@ const EsahulatQueuePage = () => {
   };
 
   useEffect(() => {
-    loadRequests();
+    loadRequests(1);
   }, []);
+
+  const goToPage = (targetPage) => {
+    if (targetPage < 1 || targetPage > totalPages || targetPage === page)
+      return;
+    loadRequests(targetPage);
+  };
 
   const filtered = requests.filter((req) => {
     const query = search.trim().toLowerCase();
@@ -56,6 +73,10 @@ const EsahulatQueuePage = () => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query));
   });
+
+  const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, total);
+ 
 
   return (
     <div style={s.layout}>
@@ -161,6 +182,35 @@ const EsahulatQueuePage = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+           {!loading && total > 0 && (
+            <div style={s.paginationBar}>
+              <span style={s.rangeText}>
+                Showing {rangeStart}–{rangeEnd} of {total}
+              </span>
+              <div style={s.pagerControls}>
+                <button
+                  className="ap-page-btn"
+                  style={s.pageBtn}
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                >
+                  Previous
+                </button>
+                <span style={s.pageIndicator}>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  className="ap-page-btn"
+                  style={s.pageBtn}
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -312,6 +362,12 @@ const s = {
   empty: { padding: "42px 20px", textAlign: "center" },
   emptyTitle: { fontSize: 15, fontWeight: 800, color: "#111827" },
   emptySub: { fontSize: 13, color: "#6B7280", marginTop: 4 },
+  paginationBar: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderTop: "1px solid #F3F4F6", flexWrap: "wrap", gap: 10 },
+  rangeText: { fontSize: 12.5, color: "#6B7280", fontWeight: 600 },
+  pagerControls: { display: "flex", alignItems: "center", gap: 10 },
+  pageBtn: { backgroundColor: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, color: "#111827", cursor: "pointer" },
+  pageIndicator: { fontSize: 12.5, fontWeight: 700, color: "#374151" },
+
 };
 
 export default EsahulatQueuePage;

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
+import { message } from "antd";
 
 const API =
   process.env.REACT_APP_ESAHULAT_API_URL ||
@@ -11,6 +12,7 @@ const EsahulatRequestDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [localImage, setLocalImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [reason, setReason] = useState("");
@@ -25,7 +27,9 @@ const EsahulatRequestDetailPage = () => {
   const loadRequest = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/esahulat-officer/requests/${id}`, { headers });
+      const res = await axios.get(`${API}/esahulat-officer/requests/${id}`, {
+        headers,
+      });
       setData(res.data.data);
     } catch (err) {
       setData(null);
@@ -41,7 +45,12 @@ const EsahulatRequestDetailPage = () => {
   const approve = async () => {
     setSubmitting(true);
     try {
-      await axios.patch(`${API}/esahulat-officer/requests/${id}/approve`, {}, { headers });
+      await axios.patch(
+        `${API}/esahulat-officer/requests/${id}/approve`,
+        {},
+        { headers },
+      );
+      message.success("Request approved successfully.");
       navigate("/requests");
     } finally {
       setSubmitting(false);
@@ -49,7 +58,11 @@ const EsahulatRequestDetailPage = () => {
   };
 
   const reject = async () => {
-    if (!reason.trim()) return;
+
+    if (!reason.trim()) {
+      message.error("Please enter rejection reason");
+      return;
+    }
     setSubmitting(true);
     try {
       await axios.patch(
@@ -57,11 +70,40 @@ const EsahulatRequestDetailPage = () => {
         { reason },
         { headers },
       );
+
+      message.success("Request rejected successfully.");
+
       navigate("/requests");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const GetImage = async (raw) => {
+    if (!raw) return null;
+
+    try {
+      const response = await axios.get(`${API}/esahulat-officer/documents/`, {
+        headers,
+        params: {
+          raw,
+        },
+        responseType: "blob",
+      });
+
+      const blobUrl = URL.createObjectURL(response.data);
+
+      setLocalImage(blobUrl);
+    } catch (err) {
+      console.error("GetImage error:", err);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    GetImage(data?.esahulat?.slipImage);
+  }, [data?.esahulat?.slipImage]);
+
 
   const cnicMismatch =
     data?.esahulat?.cnicOnSlip &&
@@ -103,12 +145,8 @@ const EsahulatRequestDetailPage = () => {
         ) : (
           <div style={s.grid}>
             <section style={s.card} className="apd-card">
-              {data.esahulat?.slipImage && (
-                <img
-                  src={data.esahulat.slipImage}
-                  alt="eSahulat slip"
-                  style={s.hero}
-                />
+              {data.esahulat?.slipImage && localImage && (
+                <img src={localImage} alt="eSahulat slip" style={s.hero} />
               )}
 
               <div style={s.badgeRow}>
@@ -134,14 +172,16 @@ const EsahulatRequestDetailPage = () => {
                   value={data.esahulat?.cnicOnSlip}
                 />
                 <Detail label="District" value={data.esahulat?.district} />
-                <Detail
-                  label="Service charges"
-                  value={
-                    data.esahulat?.serviceCharges
-                      ? `PKR ${data.esahulat.serviceCharges}`
-                      : "—"
-                  }
-                />
+                {data.esahulat?.serviceCharges > 0 && (
+                  <Detail
+                    label="Service charges"
+                    value={
+                      data.esahulat?.serviceCharges
+                        ? `PKR ${data.esahulat.serviceCharges}`
+                        : "—"
+                    }
+                  />
+                )}
                 <Detail
                   label="Issue date"
                   value={
@@ -158,11 +198,13 @@ const EsahulatRequestDetailPage = () => {
                       : "—"
                   }
                 />
-                <Detail
-                  label="Barcode"
-                  value={data.esahulat?.barcodeValue}
-                  wide
-                />
+                {data.esahulat?.barcodeValue && (
+                  <Detail
+                    label="Barcode"
+                    value={data.esahulat?.barcodeValue}
+                    wide
+                  />
+                )}
               </div>
             </section>
 
@@ -196,9 +238,12 @@ const EsahulatRequestDetailPage = () => {
                     disabled={submitting}
                     style={s.approveBtn}
                   >
-                    Approve request
+                    {submitting && !reason
+                      ? "Please wait..."
+                      : "Approve request"}
                   </button>
                   <textarea
+                    disabled={submitting}
                     className="apd-input"
                     style={s.textarea}
                     placeholder="Rejection reason"
@@ -207,10 +252,10 @@ const EsahulatRequestDetailPage = () => {
                   />
                   <button
                     onClick={reject}
-                    disabled={submitting || !reason.trim()}
+                    disabled={submitting}
                     style={s.rejectBtn}
                   >
-                    Reject request
+                    {submitting && reason ? "Please wait..." : "Reject request"}
                   </button>
                 </section>
               )}
@@ -434,7 +479,7 @@ const s = {
   },
   rejectBtn: {
     width: "100%",
-    backgroundColor: "#374151",
+    backgroundColor: "#c72800",
     color: "#fff",
     border: "none",
     borderRadius: 12,
