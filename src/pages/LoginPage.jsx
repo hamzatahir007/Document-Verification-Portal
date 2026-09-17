@@ -16,7 +16,7 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // console.log(`${API}/esahulat-officer/login`);
+    console.log(`${API}/esahulat-officer/login`);
     try {
       const res = await axios.post(`${API}/esahulat-officer/login`, {
         cnic,
