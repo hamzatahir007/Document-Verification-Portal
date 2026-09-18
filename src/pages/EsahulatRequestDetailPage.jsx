@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { message } from "antd";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const API =
   process.env.REACT_APP_ESAHULAT_API_URL ||
@@ -18,6 +19,7 @@ const EsahulatRequestDetailPage = () => {
   const [reason, setReason] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const token = localStorage.getItem("esahulat_token");
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
@@ -52,13 +54,18 @@ const EsahulatRequestDetailPage = () => {
       );
       message.success("Request approved successfully.");
       navigate("/requests");
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Failed to approve request.",
+      );
+
+      return false;
     } finally {
       setSubmitting(false);
     }
   };
 
   const reject = async () => {
-
     if (!reason.trim()) {
       message.error("Please enter rejection reason");
       return;
@@ -74,6 +81,12 @@ const EsahulatRequestDetailPage = () => {
       message.success("Request rejected successfully.");
 
       navigate("/requests");
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Failed to reject request.",
+      );
+
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -103,7 +116,6 @@ const EsahulatRequestDetailPage = () => {
   useEffect(() => {
     GetImage(data?.esahulat?.slipImage);
   }, [data?.esahulat?.slipImage]);
-
 
   const cnicMismatch =
     data?.esahulat?.cnicOnSlip &&
@@ -234,7 +246,7 @@ const EsahulatRequestDetailPage = () => {
                 <section style={s.card} className="apd-card">
                   <h3 style={s.sectionTitle}>Officer actions</h3>
                   <button
-                    onClick={approve}
+                    onClick={() => setConfirmAction("approve")}
                     disabled={submitting}
                     style={s.approveBtn}
                   >
@@ -251,7 +263,14 @@ const EsahulatRequestDetailPage = () => {
                     onChange={(e) => setReason(e.target.value)}
                   />
                   <button
-                    onClick={reject}
+                    onClick={() => {
+                      if (!reason.trim()) {
+                        message.error("Please enter rejection reason");
+                        return;
+                      }
+
+                      setConfirmAction("reject");
+                    }}
                     disabled={submitting}
                     style={s.rejectBtn}
                   >
@@ -273,6 +292,40 @@ const EsahulatRequestDetailPage = () => {
           </div>
         )}
       </main>
+
+      <ConfirmationModal
+        open={!!confirmAction}
+        title={
+          confirmAction === "approve"
+            ? "Approve this request?"
+            : "Reject this request?"
+        }
+        message={
+          confirmAction === "approve"
+            ? "This is a critical action. Please carefully verify the eSahulat slip, CNIC, applicant details, and expiry date before approving. Once approved, this request will be marked as verified."
+            : "This is a critical action. Please make sure the rejection reason is accurate and justified. Once rejected, this request will be marked as rejected."
+        }
+        confirmText={
+          confirmAction === "approve" ? "Yes, approve" : "Yes, reject"
+        }
+        cancelText="Cancel"
+        variant={confirmAction === "approve" ? "default" : "danger"}
+        loading={submitting}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmAction(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (confirmAction === "approve") {
+            await approve();
+          } else if (confirmAction === "reject") {
+            await reject();
+          }
+
+          setConfirmAction(null);
+        }}
+      />
     </div>
   );
 };

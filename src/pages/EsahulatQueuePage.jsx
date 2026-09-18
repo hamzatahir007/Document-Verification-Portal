@@ -76,7 +76,6 @@ const EsahulatQueuePage = () => {
 
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, total);
- 
 
   return (
     <div style={s.layout}>
@@ -98,11 +97,11 @@ const EsahulatQueuePage = () => {
             <h1 style={s.pageTitle}>Pending Approvals</h1>
             <p style={s.subTitle}>
               {officer
-                ? `Assigned to ${officer.fullName} (${officer.employeeId})`
+                ? `Assigned to ${officer.fullName} (${officer.cnic || officer.employeeId})`
                 : "Requests assigned to you for review."}
             </p>
           </div>
-          <button onClick={loadRequests} style={s.refreshBtn}>
+          <button onClick={() => loadRequests(1)} style={s.refreshBtn}>
             Refresh
           </button>
         </div>
@@ -185,7 +184,7 @@ const EsahulatQueuePage = () => {
             </div>
           )}
 
-           {!loading && total > 0 && (
+          {!loading && total > 0 && (
             <div style={s.paginationBar}>
               <span style={s.rangeText}>
                 Showing {rangeStart}–{rangeEnd} of {total}
@@ -362,12 +361,28 @@ const s = {
   empty: { padding: "42px 20px", textAlign: "center" },
   emptyTitle: { fontSize: 15, fontWeight: 800, color: "#111827" },
   emptySub: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-  paginationBar: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderTop: "1px solid #F3F4F6", flexWrap: "wrap", gap: 10 },
+  paginationBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "14px 16px",
+    borderTop: "1px solid #F3F4F6",
+    flexWrap: "wrap",
+    gap: 10,
+  },
   rangeText: { fontSize: 12.5, color: "#6B7280", fontWeight: 600 },
   pagerControls: { display: "flex", alignItems: "center", gap: 10 },
-  pageBtn: { backgroundColor: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, color: "#111827", cursor: "pointer" },
+  pageBtn: {
+    backgroundColor: "#fff",
+    border: "1.5px solid #E5E7EB",
+    borderRadius: 8,
+    padding: "7px 14px",
+    fontSize: 12.5,
+    fontWeight: 700,
+    color: "#111827",
+    cursor: "pointer",
+  },
   pageIndicator: { fontSize: 12.5, fontWeight: 700, color: "#374151" },
-
 };
 
 export default EsahulatQueuePage;
