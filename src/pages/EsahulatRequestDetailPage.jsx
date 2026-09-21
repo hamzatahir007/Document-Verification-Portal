@@ -4,10 +4,17 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { message } from "antd";
 import ConfirmationModal from "../components/ConfirmationModal";
+import { CopyButton } from "./EsahulatQueuePage.jsx";
 
 const API =
   process.env.REACT_APP_ESAHULAT_API_URL ||
   "http://localhost:5000/api/esahulat-officer";
+
+const REJECTION_REASONS = [
+  "Fake slip",
+  "CNIC and eSahulat ID not matched",
+  "Other",
+];
 
 const EsahulatRequestDetailPage = () => {
   const { id } = useParams();
@@ -16,10 +23,12 @@ const EsahulatRequestDetailPage = () => {
   const [localImage, setLocalImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [reason, setReason] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const token = localStorage.getItem("esahulat_token");
   const [confirmAction, setConfirmAction] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
@@ -32,6 +41,7 @@ const EsahulatRequestDetailPage = () => {
       const res = await axios.get(`${API}/esahulat-officer/requests/${id}`, {
         headers,
       });
+
       setData(res.data.data);
     } catch (err) {
       setData(null);
@@ -65,8 +75,15 @@ const EsahulatRequestDetailPage = () => {
     }
   };
 
+  const finalRejectReason =
+    rejectReason === "Other" ? customReason.trim() : rejectReason;
+  const canReject =
+    rejectReason && (rejectReason !== "Other" || customReason.trim());
+
   const reject = async () => {
-    if (!reason.trim()) {
+    // console.log(finalRejectReason);
+    // return;
+    if (!canReject) {
       message.error("Please enter rejection reason");
       return;
     }
@@ -74,11 +91,13 @@ const EsahulatRequestDetailPage = () => {
     try {
       await axios.patch(
         `${API}/esahulat-officer/requests/${id}/reject`,
-        { reason },
+        { reason: finalRejectReason },
         { headers },
       );
 
       message.success("Request rejected successfully.");
+      setRejectReason("");
+      setCustomReason("");
 
       navigate("/requests");
     } catch (err) {
@@ -122,6 +141,24 @@ const EsahulatRequestDetailPage = () => {
     data?.citizen?.cnic &&
     data.esahulat.cnicOnSlip.replace(/-/g, "") !==
       data.citizen.cnic.replace(/-/g, "");
+
+  const closeModal = () => {
+    if (submitting) return;
+    setActionModal(null);
+    setRejectReason("");
+    setCustomReason("");
+  };
+
+  const copyToClipboard = async (value, key) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1200);
+    } catch (err) {
+      // Clipboard API can fail on non-HTTPS/localhost-exempt contexts — fail silently.
+    }
+  };
 
   return (
     <div style={s.layout}>
@@ -178,11 +215,26 @@ const EsahulatRequestDetailPage = () => {
               <p style={s.eventMeta}>{data.applicationType} application</p>
 
               <div style={s.detailGrid}>
-                <Detail label="eSahulat ID" value={data.esahulat?.eSahulatId} />
+                {data.esahulat?.barcodeValue && (
+                  <Detail
+                    label="Barcode"
+                    value={data.esahulat?.barcodeValue}
+                    wide
+                    copiedKey={copiedKey}
+                    idKey={`esid-${data.applicationId}`}
+                    copyToClipboard={copyToClipboard}
+                  />
+                )}
                 <Detail
                   label="CNIC on slip"
                   value={data.esahulat?.cnicOnSlip}
+                  copiedKey={copiedKey}
+                  cnicKey={`cnic-${data.applicationId}`}
+                  copyToClipboard={copyToClipboard}
                 />
+
+                <Detail label="eSahulat ID" value={data.esahulat?.eSahulatId} />
+
                 <Detail label="District" value={data.esahulat?.district} />
                 {data.esahulat?.serviceCharges > 0 && (
                   <Detail
@@ -210,13 +262,6 @@ const EsahulatRequestDetailPage = () => {
                       : "—"
                   }
                 />
-                {data.esahulat?.barcodeValue && (
-                  <Detail
-                    label="Barcode"
-                    value={data.esahulat?.barcodeValue}
-                    wide
-                  />
-                )}
               </div>
             </section>
 
@@ -250,21 +295,42 @@ const EsahulatRequestDetailPage = () => {
                     disabled={submitting}
                     style={s.approveBtn}
                   >
-                    {submitting && !reason
+                    {submitting && !finalRejectReason
                       ? "Please wait..."
                       : "Approve request"}
                   </button>
-                  <textarea
-                    disabled={submitting}
-                    className="apd-input"
-                    style={s.textarea}
-                    placeholder="Rejection reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
+
+                  <h4 style={s.sectionTitle}>Reason</h4>
+
+                  <select
+                    className="ap-input"
+                    style={s.modalSelect}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    autoFocus
+                  >
+                    <option value="" disabled>
+                      Select a reason
+                    </option>
+                    {REJECTION_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  {rejectReason === "Other" && (
+                    <textarea
+                      disabled={submitting}
+                      className="apd-input"
+                      style={s.textarea}
+                      placeholder="Rejection reason"
+                      value={customReason}
+                      onChange={(e) => setCustomReason(e.target.value)}
+                    />
+                  )}
                   <button
                     onClick={() => {
-                      if (!reason.trim()) {
+                      if (!finalRejectReason) {
                         message.error("Please enter rejection reason");
                         return;
                       }
@@ -274,7 +340,9 @@ const EsahulatRequestDetailPage = () => {
                     disabled={submitting}
                     style={s.rejectBtn}
                   >
-                    {submitting && reason ? "Please wait..." : "Reject request"}
+                    {submitting && finalRejectReason
+                      ? "Please wait..."
+                      : "Reject request"}
                   </button>
                 </section>
               )}
@@ -330,10 +398,35 @@ const EsahulatRequestDetailPage = () => {
   );
 };
 
-const Detail = ({ label, value, wide = false }) => (
-  <div style={{ ...s.detailItem, gridColumn: wide ? "1 / -1" : "auto" }}>
-    <div style={s.detailLabel}>{label}</div>
-    <div style={s.detailValue}>{value || "—"}</div>
+const Detail = ({
+  label,
+  value,
+  wide = false,
+  copiedKey,
+  cnicKey,
+  idKey,
+  copyToClipboard,
+}) => (
+  <div
+    style={{
+      ...s.detailItem,
+      gridColumn: wide ? "1 / -1" : "auto",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "10px",
+    }}
+  >
+    <div style={{ minWidth: 0 }}>
+      <div style={s.detailLabel}>{label}</div>
+      <div style={s.detailValue}>{value || "—"}</div>
+    </div>
+    {(label == "CNIC on slip" || label == "Barcode") && (
+      <CopyButton
+        copied={copiedKey === cnicKey}
+        onClick={() => copyToClipboard(value, cnicKey)}
+      />
+    )}
   </div>
 );
 
@@ -555,6 +648,18 @@ const s = {
     fontFamily: "'DM Sans', system-ui, sans-serif",
   },
   noteText: { margin: 0, fontSize: 13, lineHeight: 1.7, color: "#6B7280" },
+  modalSelect: {
+    width: "100%",
+    borderRadius: 10,
+    border: "1.5px solid #E5E7EB",
+    padding: "11px 12px",
+    fontSize: 13,
+    color: "#111827",
+    marginBottom: 14,
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  },
 };
 
 export default EsahulatRequestDetailPage;
