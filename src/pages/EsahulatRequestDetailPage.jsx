@@ -113,6 +113,7 @@ const EsahulatRequestDetailPage = () => {
 
   const GetImage = async (raw) => {
     if (!raw) return null;
+    console.log(`${API}/esahulat-officer/documents/`);
 
     try {
       const response = await axios.get(`${API}/esahulat-officer/documents/`, {
