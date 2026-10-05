@@ -44,6 +44,8 @@ const LoginPage = () => {
     
       navigate("/requests", { replace: true });
     } catch (err) {
+      console.log(err);
+      
       setError(
         err?.response?.data?.message ||
           "Invalid credentials. Please try again.",
