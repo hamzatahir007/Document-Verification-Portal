@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -24,6 +24,23 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    to: "/history",
+    label: "History",
+    icon: (
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9 12l2 2 4-4" />
+        <path d="M7 3h10l4 4v10l-4 4H7l-4-4V7z" />
+      </svg>
+    ),
+  },
 ];
 
 const Sidebar = ({ collapsed = false, onToggle }) => {
@@ -31,6 +48,13 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
   const { pathname } = useLocation();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const officer = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("esahulat_officer") || "null");
+    } catch {
+      return null;
+    }
+  }, []);
 
   const performLogout = async () => {
     setLoggingOut(true);
@@ -132,7 +156,17 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
 
         <nav style={{ padding: collapsed ? "12px 8px" : "12px 10px", flex: 1 }}>
           {!collapsed && <div style={s.navSection}>Menu</div>}
-          {NAV.map(({ to, label, icon }) => {
+          {NAV.filter((res) => {
+            if (officer?.isAssign === false) {
+              return res.to === "/history";
+            }
+
+            if (officer?.isAssign === true) {
+              return res.to === "/requests";
+            }
+
+            return false;
+          }).map(({ to, label, icon }) => {
             const active = pathname === to || pathname.startsWith(`${to}/`);
             return (
               <Link
@@ -378,75 +412,74 @@ const s = {
   },
 
   overlay: {
-    position: 'fixed',
+    position: "fixed",
     inset: 0,
-    backgroundColor: 'rgba(17,24,39,0.55)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(17,24,39,0.55)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 100,
   },
   modal: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: '28px 26px 22px',
-    width: '100%',
+    padding: "28px 26px 22px",
+    width: "100%",
     maxWidth: 340,
-    boxShadow: '0 20px 48px rgba(0,0,0,0.25)',
+    boxShadow: "0 20px 48px rgba(0,0,0,0.25)",
     fontFamily: "'DM Sans', system-ui, sans-serif",
   },
   modalIconWrap: {
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#FEF2F2",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 14,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: 700,
-    color: '#111827',
-    margin: '0 0 6px',
-    letterSpacing: '-0.3px',
+    color: "#111827",
+    margin: "0 0 6px",
+    letterSpacing: "-0.3px",
   },
   modalText: {
     fontSize: 13.5,
-    color: '#6B7280',
-    margin: '0 0 22px',
+    color: "#6B7280",
+    margin: "0 0 22px",
     lineHeight: 1.6,
   },
   modalActions: {
-    display: 'flex',
+    display: "flex",
     gap: 10,
   },
   modalCancelBtn: {
     flex: 1,
-    padding: '10px 14px',
+    padding: "10px 14px",
     borderRadius: 9,
-    border: '1.5px solid #E5E7EB',
-    backgroundColor: '#fff',
-    color: '#374151',
+    border: "1.5px solid #E5E7EB",
+    backgroundColor: "#fff",
+    color: "#374151",
     fontSize: 13,
     fontWeight: 700,
-    cursor: 'pointer',
+    cursor: "pointer",
     fontFamily: "'DM Sans', system-ui, sans-serif",
   },
   modalConfirmBtn: {
     flex: 1,
-    padding: '10px 14px',
+    padding: "10px 14px",
     borderRadius: 9,
-    border: 'none',
-    backgroundColor: '#DC2626',
-    color: '#fff',
+    border: "none",
+    backgroundColor: "#DC2626",
+    color: "#fff",
     fontSize: 13,
     fontWeight: 700,
-    cursor: 'pointer',
+    cursor: "pointer",
     fontFamily: "'DM Sans', system-ui, sans-serif",
   },
-  
 };
 
 export default Sidebar;

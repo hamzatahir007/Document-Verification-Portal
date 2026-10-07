@@ -51,6 +51,7 @@ const EsahulatQueuePage = () => {
         headers,
         params: { page: targetPage, limit: PAGE_SIZE },
       });
+      
       setRequests(res.data.data.requests || []);
       setTotal(res.data.data.total || 0);
       setTotalPages(res.data.data.totalPages || 1);

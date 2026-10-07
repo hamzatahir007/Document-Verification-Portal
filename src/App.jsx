@@ -1,8 +1,16 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import EsahulatQueuePage from "./pages/EsahulatQueuePage";
 import EsahulatRequestDetailPage from "./pages/EsahulatRequestDetailPage";
+import HistoryPage from "./pages/HistoryPage.jsx";
+import HistoryDetailPage from "./pages/HistoryDetailPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginProtectedRoute from "./components/LoginProtectedRoute.jsx";
 
@@ -18,23 +26,47 @@ function App() {
             </LoginProtectedRoute>
           }
         />
+
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute requiredIsAssign={false}>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/history/:id"
+          element={
+            <ProtectedRoute requiredIsAssign={false}>
+              <HistoryDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/requests"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredIsAssign={true}>
               <EsahulatQueuePage />
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/requests/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredIsAssign={true}>
               <EsahulatRequestDetailPage />
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/requests" />} />
+
+        <Route
+          path="*"
+          element={<Navigate to="/login" replace />}
+        />
       </Routes>
     </BrowserRouter>
   );

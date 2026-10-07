@@ -41,6 +41,7 @@ const EsahulatRequestDetailPage = () => {
       const res = await axios.get(`${API}/esahulat-officer/requests/${id}`, {
         headers,
       });
+      console.log(res?.data?.data);
 
       setData(res.data.data);
     } catch (err) {
@@ -236,7 +237,10 @@ const EsahulatRequestDetailPage = () => {
 
                 <Detail label="eSahulat ID" value={data.esahulat?.eSahulatId} />
 
-                <Detail label="District" value={data.esahulat?.district} />
+                <Detail
+                  label="District on eSahulat Slip"
+                  value={data.esahulat?.district}
+                />
                 {data.esahulat?.serviceCharges > 0 && (
                   <Detail
                     label="Service charges"
@@ -280,6 +284,21 @@ const EsahulatRequestDetailPage = () => {
                     <div style={s.email}>{data.citizen?.cnic}</div>
                   </div>
                 </div>
+
+                <div style={s.detailGrid}>
+                  <Detail
+                    label="Citizen Permanent District (CNIC)"
+                    value={data?.citizen?.cnicData?.PerminantDistric}
+                    wide
+                  />
+
+                  <Detail
+                    label="Citizen Temporary District (CNIC)"
+                    value={data?.citizen?.cnicData?.TempDistric}
+                    wide
+                  />
+                </div>
+
                 {cnicMismatch && (
                   <p style={s.mismatchNote}>
                     The CNIC on the slip does not match the citizen's registered

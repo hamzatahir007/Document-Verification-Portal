@@ -4,81 +4,79 @@ import axios from "axios";
 
 const API = process.env.REACT_APP_ESAHULAT_API_URL;
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requiredIsAssign }) => {
   const [checking, setChecking] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [officer, setOfficer] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const verifyOfficer = async () => {
       const token = localStorage.getItem("esahulat_token");
 
       if (!token) {
-        setAuthenticated(false);
-        setChecking(false);
+        if (!cancelled) setChecking(false);
         return;
       }
 
       try {
-        const res = await axios.get(
-          `${API}/esahulat-officer/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await axios.get(`${API}/esahulat-officer/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const profile = res.data?.data?.officer;
 
         if (
-          res.data.success &&
-          res.data.data?.officer
+          !res.data?.success ||
+          !profile ||
+          profile.isActive !== true ||
+          typeof profile.isAssign !== "boolean"
         ) {
-          // Keep the latest real profile
-          localStorage.setItem(
-            "esahulat_officer",
-            JSON.stringify(res.data.data.officer)
-          );
-
-          setAuthenticated(true);
-        } else {
           throw new Error("Invalid officer profile.");
         }
+
+        if (!cancelled) {
+          localStorage.setItem(
+            "esahulat_officer",
+            JSON.stringify(profile)
+          );
+          setOfficer(profile);
+        }
       } catch (error) {
-        console.error("Officer authentication failed:", error);
-
-        localStorage.removeItem("esahulat_token");
-        localStorage.removeItem("esahulat_officer");
-
-        setAuthenticated(false);
+        if (!cancelled) {
+          localStorage.removeItem("esahulat_token");
+          localStorage.removeItem("esahulat_officer");
+          setOfficer(null);
+        }
       } finally {
-        setChecking(false);
+        if (!cancelled) setChecking(false);
       }
     };
 
     verifyOfficer();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (checking) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "Arial, sans-serif",
-          color: "#6B7280",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
+    return <div style={{ padding: 24 }}>Checking authentication...</div>;
   }
 
-  return authenticated ? (
-    children
-  ) : (
-    <Navigate to="/login" replace />
-  );
+  if (!officer) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const homeRoute = officer.isAssign ? "/requests" : "/history";
+
+  if (officer.isAssign !== requiredIsAssign) {
+    return <Navigate to={homeRoute} replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

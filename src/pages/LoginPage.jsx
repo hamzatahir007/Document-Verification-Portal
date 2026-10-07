@@ -41,11 +41,14 @@ const LoginPage = () => {
       // console.log(officer , 'officer');
 
       localStorage.setItem("esahulat_officer", JSON.stringify(officer));
-    
-      navigate("/requests", { replace: true });
+
+      // navigate("/requests", { replace: true });
+      navigate(officer.isAssign ? "/requests" : "/history", {
+        replace: true,
+      });
     } catch (err) {
       console.log(err);
-      
+
       setError(
         err?.response?.data?.message ||
           "Invalid credentials. Please try again.",

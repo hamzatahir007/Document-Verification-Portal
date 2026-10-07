@@ -6,72 +6,71 @@ const API = process.env.REACT_APP_ESAHULAT_API_URL;
 
 const LoginProtectedRoute = ({ children }) => {
   const [checking, setChecking] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [officer, setOfficer] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const verifyOfficer = async () => {
       const token = localStorage.getItem("esahulat_token");
 
       if (!token) {
-        setChecking(false);
+        if (!cancelled) setChecking(false);
         return;
       }
 
       try {
-        const res = await axios.get(
-          `${API}/esahulat-officer/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await axios.get(`${API}/esahulat-officer/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const profile = res.data?.data?.officer;
 
         if (
-          res.data.success &&
-          res.data.data?.officer
+          !res.data?.success ||
+          !profile ||
+          profile.isActive !== true ||
+          typeof profile.isAssign !== "boolean"
         ) {
+          throw new Error("Invalid officer profile.");
+        }
+
+        if (!cancelled) {
           localStorage.setItem(
             "esahulat_officer",
-            JSON.stringify(res.data.data.officer)
+            JSON.stringify(profile)
           );
-
-          setAuthenticated(true);
-        } else {
-          throw new Error("Invalid session");
+          setOfficer(profile);
         }
       } catch (error) {
-        localStorage.removeItem("esahulat_token");
-        localStorage.removeItem("esahulat_officer");
-
-        setAuthenticated(false);
+        if (!cancelled) {
+          localStorage.removeItem("esahulat_token");
+          localStorage.removeItem("esahulat_officer");
+          setOfficer(null);
+        }
       } finally {
-        setChecking(false);
+        if (!cancelled) setChecking(false);
       }
     };
 
     verifyOfficer();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (checking) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "Arial, sans-serif",
-          color: "#6B7280",
-        }}
-      >
-        Checking authentication...
-      </div>
-    );
+    return <div style={{ padding: 24 }}>Checking authentication...</div>;
   }
 
-  return authenticated ? (
-    <Navigate to="/requests" replace />
+  return officer ? (
+    <Navigate
+      to={officer.isAssign ? "/requests" : "/history"}
+      replace
+    />
   ) : (
     children
   );
