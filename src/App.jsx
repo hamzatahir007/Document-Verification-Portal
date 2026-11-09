@@ -13,6 +13,8 @@ import HistoryPage from "./pages/HistoryPage.jsx";
 import HistoryDetailPage from "./pages/HistoryDetailPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginProtectedRoute from "./components/LoginProtectedRoute.jsx";
+import ComplainPage from "./pages/Complain.jsx";
+import ComplaintDetailPage from "./pages/ComplainDetails.jsx";
 
 function App() {
   return (
@@ -32,6 +34,22 @@ function App() {
           element={
             <ProtectedRoute requiredIsAssign={false}>
               <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/complain"
+          element={
+            <ProtectedRoute requiredIsAssign={false}>
+              <ComplainPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/complain/:id"
+          element={
+            <ProtectedRoute requiredIsAssign={false}>
+              <ComplaintDetailPage />
             </ProtectedRoute>
           }
         />

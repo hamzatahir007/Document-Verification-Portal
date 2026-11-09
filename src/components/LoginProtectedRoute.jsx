@@ -68,7 +68,7 @@ const LoginProtectedRoute = ({ children }) => {
 
   return officer ? (
     <Navigate
-      to={officer.isAssign ? "/requests" : "/history"}
+      to={officer.isAssign ? "/requests" :officer.isForComplain?"/complain": "/history"}
       replace
     />
   ) : (

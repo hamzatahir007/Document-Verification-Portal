@@ -43,7 +43,7 @@ const LoginPage = () => {
       localStorage.setItem("esahulat_officer", JSON.stringify(officer));
 
       // navigate("/requests", { replace: true });
-      navigate(officer.isAssign ? "/requests" : "/history", {
+      navigate(officer.isAssign ? "/requests" :officer.isForComplain?"/complain": "/history", {
         replace: true,
       });
     } catch (err) {

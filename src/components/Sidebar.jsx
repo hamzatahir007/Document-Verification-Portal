@@ -41,6 +41,23 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    to: "/complain",
+    label: "Complaints",
+    icon: (
+      <svg
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9 12l2 2 4-4" />
+        <path d="M7 3h10l4 4v10l-4 4H7l-4-4V7z" />
+      </svg>
+    ),
+  },
 ];
 
 const Sidebar = ({ collapsed = false, onToggle }) => {
@@ -157,7 +174,11 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
         <nav style={{ padding: collapsed ? "12px 8px" : "12px 10px", flex: 1 }}>
           {!collapsed && <div style={s.navSection}>Menu</div>}
           {NAV.filter((res) => {
-            if (officer?.isAssign === false) {
+            if (officer?.isAssign === false&&officer?.isForComplain=== true) {
+              return res.to === "/complain";
+            } 
+            
+            if (officer?.isAssign === false&&officer?.isForComplain!= true) {
               return res.to === "/history";
             }
 

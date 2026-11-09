@@ -7,7 +7,7 @@ const API = process.env.REACT_APP_ESAHULAT_API_URL;
 const ProtectedRoute = ({ children, requiredIsAssign }) => {
   const [checking, setChecking] = useState(true);
   const [officer, setOfficer] = useState(null);
-
+  console.log(officer,"officer")
   useEffect(() => {
     let cancelled = false;
 
@@ -70,7 +70,20 @@ const ProtectedRoute = ({ children, requiredIsAssign }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const homeRoute = officer.isAssign ? "/requests" : "/history";
+  const isComplaintRoute =
+    location.pathname === "/complain" ||
+    location.pathname.startsWith("/complain/");
+
+  // Complaint-only officers can access only complaint routes.
+  if (officer.isForComplain === true) {
+    if (!isComplaintRoute) {
+      return <Navigate to="/complain" replace />;
+    }
+
+    return children;
+  }
+
+  const homeRoute = officer.isAssign ? "/requests" :officer?.isForComplain?"/complain": "/history";
 
   if (officer.isAssign !== requiredIsAssign) {
     return <Navigate to={homeRoute} replace />;
