@@ -14,7 +14,7 @@ import ConfirmationModal from "../components/ConfirmationModal.jsx";
 
 // API base URL should end at /api, not /api/complaints/officer
 const API = (
-  process.env.REACT_APP_COMPLAINT_API_URL ||
+  process.env.REACT_APP_ESAHULAT_API_URL ||
   "http://localhost:5000/api"
 ).replace(/\/+$/, "");
 
